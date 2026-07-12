@@ -13,3 +13,4 @@ xcuserdata/
 
 # Claude Code local settings
 .claude/
+*.dmg
