@@ -1,0 +1,73 @@
+/* Sidebar */
+"Dashboard" = "Panel";
+"Shortcuts" = "Kısayollar";
+"Layouts" = "Düzenler";
+"Settings" = "Ayarlar";
+"Window Manager" = "Pencere Yöneticisi";
+"Active" = "Etkin";
+
+/* Dashboard */
+"Manage your windows with a single keystroke" = "Pencerelerini tek tuşla yönet";
+"Accessibility Permission" = "Erişilebilirlik İzni";
+"Panevo can manage your windows." = "Panevo pencerelerini yönetebilir.";
+"Required to move and resize windows of other apps." = "Diğer uygulamaların pencerelerini taşımak ve boyutlandırmak için gerekli.";
+"Grant Access" = "İzin Ver";
+"Displays" = "Ekranlar";
+"No displays detected" = "Ekran algılanamadı";
+"Built-in Display" = "Dahili Ekran";
+"External Display" = "Harici Ekran";
+"Quick Actions" = "Hızlı Eylemler";
+"Left" = "Sol";
+"Right" = "Sağ";
+"Top" = "Üst";
+"Bottom" = "Alt";
+"Top Left" = "Sol Üst";
+"Top Right" = "Sağ Üst";
+"Bottom Left" = "Sol Alt";
+"Bottom Right" = "Sağ Alt";
+"Maximize" = "Büyüt";
+"Center" = "Ortala";
+"Left ⅓" = "Sol ⅓";
+"Right ⅓" = "Sağ ⅓";
+
+/* Shortcuts */
+"System-wide keyboard shortcuts, available in every app" = "Tüm uygulamalarda geçerli sistem genelinde klavye kısayolları";
+"Change" = "Değiştir";
+"Press keys…" = "Tuşlara bas…";
+"Reset to Defaults" = "Varsayılanlara Dön";
+"Conflicting shortcuts detected" = "Çakışan kısayollar tespit edildi";
+"Left Half" = "Sol Yarı";
+"Right Half" = "Sağ Yarı";
+"Top Half" = "Üst Yarı";
+"Bottom Half" = "Alt Yarı";
+"Full Screen" = "Tam Ekran";
+
+/* Layouts */
+"Save your current window arrangement and restore it anytime" = "Mevcut pencere düzenini kaydet, istediğin zaman geri yükle";
+"Save Current Layout" = "Mevcut Düzeni Kaydet";
+"Layout name (e.g. Coding)" = "Düzen adı (örn. Kodlama)";
+"Save Layout" = "Düzeni Kaydet";
+"Captures the position and size of every open window. Apply later to restore them exactly." = "Açık tüm pencerelerin konum ve boyutunu kaydeder. Daha sonra Uygula ile aynen geri yükleyebilirsin.";
+"Saved Profiles" = "Kayıtlı Profiller";
+"Apply" = "Uygula";
+"%lld windows" = "%lld pencere";
+
+/* Settings */
+"Tune Panevo to your workflow" = "Panevo'yu çalışma şekline göre ayarla";
+"General" = "Genel";
+"Launch at Login" = "Girişte Başlat";
+"Start Panevo automatically when you log in" = "Oturum açtığında Panevo otomatik başlasın";
+"Snap Overlay" = "Yaslama Önizlemesi";
+"Show a preview overlay while dragging windows to screen edges" = "Pencereyi ekran kenarına sürüklerken önizleme göster";
+"Animation" = "Animasyon";
+"Snap Animation" = "Yaslama Animasyonu";
+"How windows move into place" = "Pencereler yerine nasıl otursun";
+"Instant" = "Anında";
+"Snappy" = "Çevik";
+"Smooth" = "Akıcı";
+"Springy" = "Esnek";
+
+/* Menu bar */
+"Open Panevo" = "Panevo'yu Aç";
+"Move to Next Display" = "Sonraki Ekrana Taşı";
+"Quit" = "Çıkış";

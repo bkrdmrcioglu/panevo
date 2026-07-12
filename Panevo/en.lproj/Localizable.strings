@@ -1,0 +1,73 @@
+/* Sidebar */
+"Dashboard" = "Dashboard";
+"Shortcuts" = "Shortcuts";
+"Layouts" = "Layouts";
+"Settings" = "Settings";
+"Window Manager" = "Window Manager";
+"Active" = "Active";
+
+/* Dashboard */
+"Manage your windows with a single keystroke" = "Manage your windows with a single keystroke";
+"Accessibility Permission" = "Accessibility Permission";
+"Panevo can manage your windows." = "Panevo can manage your windows.";
+"Required to move and resize windows of other apps." = "Required to move and resize windows of other apps.";
+"Grant Access" = "Grant Access";
+"Displays" = "Displays";
+"No displays detected" = "No displays detected";
+"Built-in Display" = "Built-in Display";
+"External Display" = "External Display";
+"Quick Actions" = "Quick Actions";
+"Left" = "Left";
+"Right" = "Right";
+"Top" = "Top";
+"Bottom" = "Bottom";
+"Top Left" = "Top Left";
+"Top Right" = "Top Right";
+"Bottom Left" = "Bottom Left";
+"Bottom Right" = "Bottom Right";
+"Maximize" = "Maximize";
+"Center" = "Center";
+"Left ⅓" = "Left ⅓";
+"Right ⅓" = "Right ⅓";
+
+/* Shortcuts */
+"System-wide keyboard shortcuts, available in every app" = "System-wide keyboard shortcuts, available in every app";
+"Change" = "Change";
+"Press keys…" = "Press keys…";
+"Reset to Defaults" = "Reset to Defaults";
+"Conflicting shortcuts detected" = "Conflicting shortcuts detected";
+"Left Half" = "Left Half";
+"Right Half" = "Right Half";
+"Top Half" = "Top Half";
+"Bottom Half" = "Bottom Half";
+"Full Screen" = "Full Screen";
+
+/* Layouts */
+"Save your current window arrangement and restore it anytime" = "Save your current window arrangement and restore it anytime";
+"Save Current Layout" = "Save Current Layout";
+"Layout name (e.g. Coding)" = "Layout name (e.g. Coding)";
+"Save Layout" = "Save Layout";
+"Captures the position and size of every open window. Apply later to restore them exactly." = "Captures the position and size of every open window. Apply later to restore them exactly.";
+"Saved Profiles" = "Saved Profiles";
+"Apply" = "Apply";
+"%lld windows" = "%lld windows";
+
+/* Settings */
+"Tune Panevo to your workflow" = "Tune Panevo to your workflow";
+"General" = "General";
+"Launch at Login" = "Launch at Login";
+"Start Panevo automatically when you log in" = "Start Panevo automatically when you log in";
+"Snap Overlay" = "Snap Overlay";
+"Show a preview overlay while dragging windows to screen edges" = "Show a preview overlay while dragging windows to screen edges";
+"Animation" = "Animation";
+"Snap Animation" = "Snap Animation";
+"How windows move into place" = "How windows move into place";
+"Instant" = "Instant";
+"Snappy" = "Snappy";
+"Smooth" = "Smooth";
+"Springy" = "Springy";
+
+/* Menu bar */
+"Open Panevo" = "Open Panevo";
+"Move to Next Display" = "Move to Next Display";
+"Quit" = "Quit";
