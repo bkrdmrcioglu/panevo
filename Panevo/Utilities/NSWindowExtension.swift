@@ -9,10 +9,6 @@ extension NSWindow {
         self.setFrame(targetFrame, display: true, animate: true)
     }
 
-    var isVisible: Bool {
-        return self.isVisible
-    }
-
     func moveToDisplay(_ displayID: CGDirectDisplayID) {
         guard let screen = NSScreen.screen(for: displayID) else { return }
 

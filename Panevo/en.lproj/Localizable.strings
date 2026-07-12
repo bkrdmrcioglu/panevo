@@ -70,4 +70,6 @@
 /* Menu bar */
 "Open Panevo" = "Open Panevo";
 "Move to Next Display" = "Move to Next Display";
+"Move to Previous Display" = "Move to Previous Display";
+"Restore" = "Restore";
 "Quit" = "Quit";

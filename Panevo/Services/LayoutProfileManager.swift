@@ -52,6 +52,31 @@ class LayoutProfileManager {
 
     @discardableResult
     func apply(_ profile: LayoutProfile) -> Int {
+        launchMissingApps(for: profile)
+        return applyToRunningApps(profile)
+    }
+
+    // Launches apps in the profile that aren't running, then places their
+    // windows once they've had a moment to appear.
+    private func launchMissingApps(for profile: LayoutProfile) {
+        let runningBundles = Set(NSWorkspace.shared.runningApplications.compactMap { $0.bundleIdentifier })
+        let neededBundles = Set(profile.windowLayouts.map { $0.appBundleIdentifier })
+        let missing = neededBundles.subtracting(runningBundles)
+
+        guard !missing.isEmpty else { return }
+
+        for bundleID in missing {
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { continue }
+            NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            self?.applyToRunningApps(profile)
+        }
+    }
+
+    @discardableResult
+    private func applyToRunningApps(_ profile: LayoutProfile) -> Int {
         var restoredCount = 0
         let snapshotsByBundle = Dictionary(grouping: profile.windowLayouts, by: { $0.appBundleIdentifier })
 

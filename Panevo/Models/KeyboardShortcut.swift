@@ -115,6 +115,9 @@ struct KeyboardShortcut: Identifiable, Codable, Equatable {
             KeyboardShortcut(action: .bottomHalf, keyCode: UInt32(kVK_DownArrow), modifiers: ctrlOpt),
             KeyboardShortcut(action: .fullScreen, keyCode: UInt32(kVK_Return), modifiers: ctrlOpt),
             KeyboardShortcut(action: .center, keyCode: UInt32(kVK_ANSI_C), modifiers: ctrlOpt),
+            KeyboardShortcut(action: .restore, keyCode: UInt32(kVK_Delete), modifiers: ctrlOpt),
+            KeyboardShortcut(action: .moveToNextDisplay, keyCode: UInt32(kVK_ANSI_N), modifiers: ctrlOpt),
+            KeyboardShortcut(action: .moveToPreviousDisplay, keyCode: UInt32(kVK_ANSI_P), modifiers: ctrlOpt),
         ]
     }
 
@@ -141,6 +144,7 @@ enum SnapAction: String, Codable, CaseIterable, Identifiable {
     case twoThirdsRight
     case moveToNextDisplay
     case moveToPreviousDisplay
+    case restore
 
     var id: String { self.rawValue }
 
@@ -180,6 +184,8 @@ enum SnapAction: String, Codable, CaseIterable, Identifiable {
             return "Move to Next Display"
         case .moveToPreviousDisplay:
             return "Move to Previous Display"
+        case .restore:
+            return "Restore"
         }
     }
 
@@ -215,7 +221,7 @@ enum SnapAction: String, Codable, CaseIterable, Identifiable {
             return .twoThirdsLeft
         case .twoThirdsRight:
             return .twoThirdsRight
-        case .moveToNextDisplay, .moveToPreviousDisplay:
+        case .moveToNextDisplay, .moveToPreviousDisplay, .restore:
             return nil
         }
     }

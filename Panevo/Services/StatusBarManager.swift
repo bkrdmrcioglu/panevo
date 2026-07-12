@@ -76,6 +76,7 @@ class StatusBarManager: NSObject {
     }
 
     @objc private func openMainWindow() {
+        NSApp.setActivationPolicy(.regular)
         if let window = mainWindow {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)

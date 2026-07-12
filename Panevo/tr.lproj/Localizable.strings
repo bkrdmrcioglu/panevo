@@ -70,4 +70,6 @@
 /* Menu bar */
 "Open Panevo" = "Panevo'yu Aç";
 "Move to Next Display" = "Sonraki Ekrana Taşı";
+"Move to Previous Display" = "Önceki Ekrana Taşı";
+"Restore" = "Geri Yükle";
 "Quit" = "Çıkış";
