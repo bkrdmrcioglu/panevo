@@ -8,6 +8,15 @@ class WindowManager {
     private lazy var overlayManager = SnapOverlayManager(displayManager: displayManager)
     private var isDraggingNearEdge = false
 
+    // Pre-snap frames so Restore can return windows to their original size.
+    private var restoreFrames: [(window: AXUIElement, frame: CGRect)] = []
+
+    // Drag tracking: only treat a drag as a window drag when the frontmost
+    // window actually moves with the mouse.
+    private var dragCandidateWindow: AXUIElement?
+    private var dragStartOrigin: CGPoint?
+    private var isWindowDrag = false
+
     init(displayManager: DisplayManager, accessibilityManager: AccessibilityManager) {
         self.displayManager = displayManager
         self.accessibilityManager = accessibilityManager
@@ -26,7 +35,9 @@ class WindowManager {
         guard let frontmostWindow = getFrontmostWindow() else { return }
         guard let screen = NSScreen.main else { return }
 
-        let targetFrame = axFrame(from: position.getFrame(for: screen))
+        let resolved = cycledPosition(for: position, window: frontmostWindow, screen: screen)
+        rememberFrameIfNeeded(frontmostWindow)
+        let targetFrame = axFrame(from: resolved.getFrame(for: screen))
         moveWindow(frontmostWindow, to: targetFrame, animated: shouldAnimate)
     }
 
@@ -34,8 +45,59 @@ class WindowManager {
         guard let frontmostWindow = getFrontmostWindow() else { return }
         guard let screen = NSScreen.screen(for: displayID) else { return }
 
+        rememberFrameIfNeeded(frontmostWindow)
         let targetFrame = axFrame(from: position.getFrame(for: screen))
         moveWindow(frontmostWindow, to: targetFrame, animated: shouldAnimate)
+    }
+
+    // Pressing the same half-snap shortcut again cycles half → third → two thirds.
+    private func cycledPosition(for position: WindowPosition, window: AXUIElement, screen: NSScreen) -> WindowPosition {
+        let cycles: [WindowPosition: [WindowPosition]] = [
+            .leftHalf: [.leftHalf, .thirdLeft, .twoThirdsLeft],
+            .rightHalf: [.rightHalf, .thirdRight, .twoThirdsRight],
+        ]
+
+        guard let cycle = cycles[position],
+              let currentPosition = accessibilityManager.getWindowPosition(from: window),
+              let currentSize = accessibilityManager.getWindowSize(from: window) else {
+            return position
+        }
+
+        let current = CGRect(origin: currentPosition, size: currentSize)
+
+        for (index, candidate) in cycle.enumerated() {
+            let frame = axFrame(from: candidate.getFrame(for: screen))
+            if abs(frame.minX - current.minX) < 2, abs(frame.minY - current.minY) < 2,
+               abs(frame.width - current.width) < 2, abs(frame.height - current.height) < 2 {
+                return cycle[(index + 1) % cycle.count]
+            }
+        }
+        return position
+    }
+
+    // MARK: - Restore
+
+    private func rememberFrameIfNeeded(_ window: AXUIElement) {
+        guard !restoreFrames.contains(where: { CFEqual($0.window, window) }),
+              let position = accessibilityManager.getWindowPosition(from: window),
+              let size = accessibilityManager.getWindowSize(from: window) else {
+            return
+        }
+
+        restoreFrames.append((window, CGRect(origin: position, size: size)))
+        if restoreFrames.count > 20 {
+            restoreFrames.removeFirst()
+        }
+    }
+
+    func restoreWindow() {
+        guard let window = getFrontmostWindow(),
+              let entry = restoreFrames.last(where: { CFEqual($0.window, window) }) else {
+            return
+        }
+
+        moveWindow(window, to: entry.frame, animated: shouldAnimate)
+        restoreFrames.removeAll { CFEqual($0.window, window) }
     }
 
     private var shouldAnimate: Bool {
@@ -214,50 +276,89 @@ class WindowManager {
     }
 
     private func handleDragEvent(_ event: NSEvent) {
-        let mouseLocation = event.locationInWindow ?? NSEvent.mouseLocation
+        let mouseLocation = NSEvent.mouseLocation
 
         switch event.type {
         case .leftMouseDragged:
-            updateDragOverlay(at: mouseLocation)
+            trackWindowDrag()
+            if isWindowDrag {
+                updateDragOverlay(at: mouseLocation)
+            }
         case .leftMouseUp:
             hideDragOverlay()
-            handleDragRelease(at: mouseLocation)
+            if isWindowDrag {
+                handleDragRelease(at: mouseLocation)
+            }
+            resetDragTracking()
         default:
             break
         }
     }
 
-    private func edgePosition(at point: CGPoint) -> WindowPosition? {
-        guard let screen = NSScreen.screen(for: displayManager.displays.first?.id ?? CGMainDisplayID()) else {
-            return nil
+    private func trackWindowDrag() {
+        if dragCandidateWindow == nil {
+            dragCandidateWindow = getFrontmostWindow()
+            if let window = dragCandidateWindow {
+                dragStartOrigin = accessibilityManager.getWindowPosition(from: window)
+            }
+            return
         }
+
+        guard !isWindowDrag,
+              let window = dragCandidateWindow,
+              let startOrigin = dragStartOrigin,
+              let currentOrigin = accessibilityManager.getWindowPosition(from: window) else {
+            return
+        }
+
+        // The window only moves with the cursor when its title bar is being dragged.
+        if abs(currentOrigin.x - startOrigin.x) > 5 || abs(currentOrigin.y - startOrigin.y) > 5 {
+            isWindowDrag = true
+        }
+    }
+
+    private func resetDragTracking() {
+        dragCandidateWindow = nil
+        dragStartOrigin = nil
+        isWindowDrag = false
+    }
+
+    private func screenUnderMouse(_ point: CGPoint) -> NSScreen? {
+        return NSScreen.screens.first { $0.frame.contains(point) } ?? NSScreen.main
+    }
+
+    private func edgePosition(at point: CGPoint) -> (position: WindowPosition, displayID: CGDirectDisplayID)? {
+        guard let screen = screenUnderMouse(point) else { return nil }
 
         let screenFrame = screen.visibleFrame
         let threshold: CGFloat = 50
 
+        let position: WindowPosition?
         if point.x - screenFrame.minX < threshold {
-            return .leftHalf
+            position = .leftHalf
         } else if screenFrame.maxX - point.x < threshold {
-            return .rightHalf
+            position = .rightHalf
         } else if screenFrame.maxY - point.y < threshold {
-            return .topHalf
+            position = .topHalf
         } else if point.y - screenFrame.minY < threshold {
-            return .bottomHalf
+            position = .bottomHalf
+        } else {
+            position = nil
         }
-        return nil
+
+        guard let position = position else { return nil }
+        return (position, screen.displayID)
     }
 
     private func updateDragOverlay(at point: CGPoint) {
         guard SettingsManager.shared.showOverlay else { return }
 
-        let displayID = displayManager.displays.first?.id ?? CGMainDisplayID()
-
-        if let position = edgePosition(at: point) {
+        if let edge = edgePosition(at: point) {
             if !isDraggingNearEdge {
                 isDraggingNearEdge = true
-                overlayManager.showOverlay(for: position, on: displayID)
+                overlayManager.showOverlay(for: edge.position, on: edge.displayID)
             } else {
-                overlayManager.updateOverlayPosition(for: position, on: displayID)
+                overlayManager.updateOverlayPosition(for: edge.position, on: edge.displayID)
             }
         } else if isDraggingNearEdge {
             isDraggingNearEdge = false
@@ -273,8 +374,8 @@ class WindowManager {
     }
 
     private func handleDragRelease(at point: CGPoint) {
-        if let position = edgePosition(at: point) {
-            snapWindow(to: position)
+        if let edge = edgePosition(at: point) {
+            snapWindowToDisplay(edge.displayID, position: edge.position)
         }
     }
 }

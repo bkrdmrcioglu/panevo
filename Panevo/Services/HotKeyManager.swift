@@ -184,6 +184,7 @@ class HotKeyManager: ObservableObject {
         case .twoThirdsRight: windowManager.snapWindow(to: .twoThirdsRight)
         case .moveToNextDisplay: windowManager.moveWindowToNextDisplay()
         case .moveToPreviousDisplay: windowManager.moveWindowToPreviousDisplay()
+        case .restore: windowManager.restoreWindow()
         }
     }
 }
