@@ -133,7 +133,7 @@ Panevo/
 
 ## 📄 Lisans
 
-Tüm hakları saklıdır.
+[MIT](LICENSE) — © 2026 Bekir Demircioglu
 
 ---
 
