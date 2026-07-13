@@ -52,8 +52,20 @@
 "Apply" = "Apply";
 "%lld windows" = "%lld windows";
 
+/* Actions */
+"Left Third" = "Left Third";
+"Center Third" = "Center Third";
+"Right Third" = "Right Third";
+"Two Thirds Left" = "Two Thirds Left";
+"Two Thirds Right" = "Two Thirds Right";
+
 /* Settings */
 "Tune Panevo to your workflow" = "Tune Panevo to your workflow";
+"Snapping" = "Snapping";
+"Window Gap" = "Window Gap";
+"Space between snapped windows" = "Space between snapped windows";
+"Edge Sensitivity" = "Edge Sensitivity";
+"How close to the screen edge drag snapping triggers" = "How close to the screen edge drag snapping triggers";
 "General" = "General";
 "Launch at Login" = "Launch at Login";
 "Start Panevo automatically when you log in" = "Start Panevo automatically when you log in";

@@ -37,8 +37,7 @@ class WindowManager {
 
         let resolved = cycledPosition(for: position, window: frontmostWindow, screen: screen)
         rememberFrameIfNeeded(frontmostWindow)
-        let targetFrame = axFrame(from: resolved.getFrame(for: screen))
-        moveWindow(frontmostWindow, to: targetFrame, animated: shouldAnimate)
+        moveWindow(frontmostWindow, to: targetFrame(for: resolved, on: screen), animated: shouldAnimate)
     }
 
     func snapWindowToDisplay(_ displayID: CGDirectDisplayID, position: WindowPosition) {
@@ -46,8 +45,18 @@ class WindowManager {
         guard let screen = NSScreen.screen(for: displayID) else { return }
 
         rememberFrameIfNeeded(frontmostWindow)
-        let targetFrame = axFrame(from: position.getFrame(for: screen))
-        moveWindow(frontmostWindow, to: targetFrame, animated: shouldAnimate)
+        moveWindow(frontmostWindow, to: targetFrame(for: position, on: screen), animated: shouldAnimate)
+    }
+
+    // Final AX frame for a position: gap-adjusted and coordinate-converted.
+    // Insetting each side by gap/2 yields a full gap between adjacent windows.
+    private func targetFrame(for position: WindowPosition, on screen: NSScreen) -> CGRect {
+        var frame = position.getFrame(for: screen)
+        let gap = CGFloat(SettingsManager.shared.windowGap)
+        if gap > 0 {
+            frame = frame.insetBy(dx: gap / 2, dy: gap / 2)
+        }
+        return axFrame(from: frame)
     }
 
     // Pressing the same half-snap shortcut again cycles half → third → two thirds.
@@ -66,7 +75,7 @@ class WindowManager {
         let current = CGRect(origin: currentPosition, size: currentSize)
 
         for (index, candidate) in cycle.enumerated() {
-            let frame = axFrame(from: candidate.getFrame(for: screen))
+            let frame = targetFrame(for: candidate, on: screen)
             if abs(frame.minX - current.minX) < 2, abs(frame.minY - current.minY) < 2,
                abs(frame.width - current.width) < 2, abs(frame.height - current.height) < 2 {
                 return cycle[(index + 1) % cycle.count]
@@ -331,19 +340,24 @@ class WindowManager {
         guard let screen = screenUnderMouse(point) else { return nil }
 
         let screenFrame = screen.visibleFrame
-        let threshold: CGFloat = 50
+        let threshold = CGFloat(SettingsManager.shared.dragEdgeThreshold)
+
+        let nearLeft = point.x - screenFrame.minX < threshold
+        let nearRight = screenFrame.maxX - point.x < threshold
+        let nearTop = screenFrame.maxY - point.y < threshold
+        let nearBottom = point.y - screenFrame.minY < threshold
 
         let position: WindowPosition?
-        if point.x - screenFrame.minX < threshold {
-            position = .leftHalf
-        } else if screenFrame.maxX - point.x < threshold {
-            position = .rightHalf
-        } else if screenFrame.maxY - point.y < threshold {
-            position = .topHalf
-        } else if point.y - screenFrame.minY < threshold {
-            position = .bottomHalf
-        } else {
-            position = nil
+        switch (nearLeft, nearRight, nearTop, nearBottom) {
+        case (true, _, true, _): position = .topLeft
+        case (true, _, _, true): position = .bottomLeft
+        case (_, true, true, _): position = .topRight
+        case (_, true, _, true): position = .bottomRight
+        case (true, _, _, _): position = .leftHalf
+        case (_, true, _, _): position = .rightHalf
+        case (_, _, true, _): position = .topHalf
+        case (_, _, _, true): position = .bottomHalf
+        default: position = nil
         }
 
         guard let position = position else { return nil }
