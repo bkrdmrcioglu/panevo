@@ -69,7 +69,9 @@ English and Turkish — follows your system language.
 
 Grab the latest DMG from [**Releases**](https://github.com/bkrdmrcioglu/panevo/releases), open it, and drag Panevo to Applications.
 
-> First launch: right-click → Open (unsigned build), then grant Accessibility permission in System Settings → Privacy & Security → Accessibility. This permission is required by all window managers to move other apps' windows.
+The app is **signed and notarized by Apple** — no security warnings, just open it.
+
+> First launch: grant Accessibility permission in System Settings → Privacy & Security → Accessibility. This permission is required by all window managers to move other apps' windows.
 
 ### Why not on the App Store?
 The App Store requires App Sandbox, and sandboxed apps cannot control other applications' windows — the entire point of a window manager. This is the same reason Rectangle isn't on the App Store either.
