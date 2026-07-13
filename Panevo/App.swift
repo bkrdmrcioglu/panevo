@@ -19,46 +19,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var accessibilityManager: AccessibilityManager?
     private var settingsManager: SettingsManager?
     private var displayManager: DisplayManager?
-    private var windowCloseObserver: NSObjectProtocol?
-
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
+        // LSUIElement keeps the app out of the Dock; it lives in the menu bar.
+        // Activate so the main window is visible on first launch.
         NSApp.activate(ignoringOtherApps: true)
 
         setupManagers()
         requestAccessibilityPermission()
-        observeWindowClosing()
-    }
-
-    // When the last visible window closes, drop out of the Dock and keep
-    // living in the menu bar (Rectangle/Magnet-style behavior).
-    private func observeWindowClosing() {
-        windowCloseObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.willCloseNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            DispatchQueue.main.async {
-                let visibleWindows = NSApp.windows.filter {
-                    $0.isVisible && $0.canBecomeKey && !($0 is SnapOverlayWindow)
-                }
-                if visibleWindows.isEmpty {
-                    NSApp.setActivationPolicy(.accessory)
-                }
-            }
-        }
-    }
-
-    // Clicking the Dock icon (after re-activation) or reopening brings the window back.
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        NSApp.setActivationPolicy(.regular)
-        if !flag {
-            for window in NSApp.windows where window.canBecomeKey {
-                window.makeKeyAndOrderFront(nil)
-            }
-        }
-        NSApp.activate(ignoringOtherApps: true)
-        return true
     }
 
     private func setupManagers() {
