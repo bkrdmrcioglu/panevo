@@ -19,6 +19,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var accessibilityManager: AccessibilityManager?
     private var settingsManager: SettingsManager?
     private var displayManager: DisplayManager?
+    private var trustPollTimer: Timer?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // LSUIElement keeps the app out of the Dock; it lives in the menu bar.
         // Activate so the main window is visible on first launch.
@@ -26,6 +28,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         setupManagers()
         requestAccessibilityPermission()
+        relaunchWhenAccessibilityGranted()
+    }
+
+    // macOS does not fully apply a newly granted Accessibility permission to an
+    // already-running process. Watch for the grant and relaunch automatically,
+    // the same way Rectangle does.
+    private func relaunchWhenAccessibilityGranted() {
+        guard accessibilityManager?.isAccessibilityEnabled == false else { return }
+
+        trustPollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] timer in
+            guard self?.accessibilityManager?.isAccessibilityEnabled == true else { return }
+            timer.invalidate()
+            self?.relaunch()
+        }
+    }
+
+    private func relaunch() {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = ["-n", Bundle.main.bundlePath]
+        try? process.run()
+        NSApp.terminate(nil)
     }
 
     private func setupManagers() {
