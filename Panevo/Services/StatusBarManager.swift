@@ -58,6 +58,11 @@ class StatusBarManager: NSObject {
 
         menu.addItem(.separator())
 
+        let supportItem = NSMenuItem(title: NSLocalizedString("Buy Me a Coffee", comment: ""), action: #selector(openSupportPage), keyEquivalent: "")
+        supportItem.target = self
+        supportItem.image = NSImage(systemSymbolName: "cup.and.saucer", accessibilityDescription: "Support")
+        menu.addItem(supportItem)
+
         let quitItem = NSMenuItem(title: NSLocalizedString("Quit", comment: ""), action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
@@ -96,6 +101,12 @@ class StatusBarManager: NSObject {
 
         mainWindow = window
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func openSupportPage() {
+        if let url = URL(string: "https://buymeacoffee.com/bkrdmrcioglu") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     @objc private func quitApp() {
