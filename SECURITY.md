@@ -12,7 +12,7 @@
 If you discover a security vulnerability in Panevo, please report it privately:
 
 - **GitHub**: use [private vulnerability reporting](https://github.com/bkrdmrcioglu/panevo/security/advisories/new) (preferred)
-- **Email**: demirbaserkan1@gmail.com
+- **Email**: bkrdmrcioglu@gmail.com
 
 Please do **not** open a public issue for security vulnerabilities.
 
