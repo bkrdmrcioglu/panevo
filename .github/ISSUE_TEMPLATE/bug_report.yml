@@ -1,0 +1,56 @@
+name: 🐛 Bug Report
+description: Something isn't working / Bir şey çalışmıyor
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened? / Ne oldu?
+      description: A clear description of the bug. / Hatanın net bir açıklaması.
+      placeholder: "Pressing ⌃⌥← does nothing when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Tekrarlama adımları
+      placeholder: |
+        1. Open Safari
+        2. Press ⌃⌥←
+        3. Window does not move
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior / Beklenen davranış
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version / macOS sürümü
+      placeholder: "e.g. macOS 15.7 (Sequoia)"
+    validations:
+      required: true
+
+  - type: input
+    id: panevo-version
+    attributes:
+      label: Panevo version / Panevo sürümü
+      placeholder: "e.g. 1.2"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: Accessibility permission is granted (System Settings → Privacy & Security → Accessibility) / Erişilebilirlik izni verildi
+          required: true
+        - label: I searched existing issues / Mevcut issue'ları aradım
+          required: true

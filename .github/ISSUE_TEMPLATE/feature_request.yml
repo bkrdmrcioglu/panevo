@@ -1,0 +1,34 @@
+name: ✨ Feature Request
+description: Suggest an idea / Bir fikir öner
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve? / Hangi sorunu çözüyor?
+      description: Describe the use case. / Kullanım senaryosunu anlat.
+      placeholder: "When working with three monitors, I want to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution / Önerilen çözüm
+      placeholder: "A shortcut that..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / Düşünülen alternatifler
+      placeholder: "I currently work around this by..."
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues / Mevcut issue'ları aradım
+          required: true
