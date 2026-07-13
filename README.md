@@ -67,7 +67,12 @@ English and Turkish — follows your system language.
 
 ## 📥 Installation
 
-Grab the latest DMG from [**Releases**](https://github.com/bkrdmrcioglu/panevo/releases), open it, and drag Panevo to Applications.
+**Homebrew** (recommended):
+```bash
+brew install --cask bkrdmrcioglu/tap/panevo
+```
+
+**Manual**: grab the latest DMG from [**Releases**](https://github.com/bkrdmrcioglu/panevo/releases), open it, and drag Panevo to Applications.
 
 The app is **signed and notarized by Apple** — no security warnings, just open it.
 
