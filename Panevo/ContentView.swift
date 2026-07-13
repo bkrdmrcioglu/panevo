@@ -484,6 +484,7 @@ struct ShortcutsView: View {
         var updated = shortcut
         updated.keyCode = UInt32(event.keyCode)
         updated.modifiers = carbonModifiers
+        updated.isEnabled = true
 
         stopRecording()
         viewModel.updateShortcut(updated)
@@ -526,7 +527,7 @@ struct ShortcutRow: View {
                             .strokeBorder(Color.accentBlue, lineWidth: 1.5)
                     )
             } else {
-                KeycapLabel(text: shortcut.displayName)
+                KeycapLabel(text: shortcut.displayName.isEmpty ? "—" : shortcut.displayName)
             }
 
             Button(action: onChange) {
@@ -673,6 +674,32 @@ struct SettingsPaneView: View {
                         Toggle("", isOn: $settings.showOverlay)
                             .toggleStyle(.switch)
                             .labelsHidden()
+                    }
+                }
+
+                SectionLabel(text: "Snapping", icon: "rectangle.split.2x1")
+
+                VStack(spacing: 8) {
+                    settingRow(title: "Window Gap", subtitle: "Space between snapped windows") {
+                        HStack(spacing: 10) {
+                            Slider(value: $settings.windowGap, in: 0...24, step: 2)
+                                .frame(width: 180)
+                            Text("\(Int(settings.windowGap)) pt")
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .frame(width: 44, alignment: .trailing)
+                        }
+                    }
+
+                    settingRow(title: "Edge Sensitivity", subtitle: "How close to the screen edge drag snapping triggers") {
+                        HStack(spacing: 10) {
+                            Slider(value: $settings.dragEdgeThreshold, in: 20...100, step: 5)
+                                .frame(width: 180)
+                            Text("\(Int(settings.dragEdgeThreshold)) pt")
+                                .font(.system(size: 12, design: .monospaced))
+                                .foregroundColor(.secondary)
+                                .frame(width: 44, alignment: .trailing)
+                        }
                     }
                 }
 

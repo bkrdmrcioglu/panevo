@@ -11,6 +11,8 @@ class SettingsManager: ObservableObject {
         static let animationStyle = "panevo.animationStyle"
         static let showOverlay = "panevo.showOverlay"
         static let launchAtLogin = "panevo.launchAtLogin"
+        static let windowGap = "panevo.windowGap"
+        static let dragEdgeThreshold = "panevo.dragEdgeThreshold"
     }
 
     private let defaults = UserDefaults.standard
@@ -35,11 +37,21 @@ class SettingsManager: ObservableObject {
         }
     }
 
+    @Published var windowGap: Double {
+        didSet { defaults.set(windowGap, forKey: Keys.windowGap) }
+    }
+
+    @Published var dragEdgeThreshold: Double {
+        didSet { defaults.set(dragEdgeThreshold, forKey: Keys.dragEdgeThreshold) }
+    }
+
     private init() {
         let styleRaw = defaults.string(forKey: Keys.animationStyle) ?? SnapAnimationStyle.instant.rawValue
         animationStyle = SnapAnimationStyle(rawValue: styleRaw) ?? .instant
         showOverlay = defaults.object(forKey: Keys.showOverlay) as? Bool ?? true
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
+        windowGap = defaults.object(forKey: Keys.windowGap) as? Double ?? 0
+        dragEdgeThreshold = defaults.object(forKey: Keys.dragEdgeThreshold) as? Double ?? 50
 
         loadSettings()
     }
@@ -53,6 +65,12 @@ class SettingsManager: ObservableObject {
             shortcuts = saved
         } else {
             shortcuts = KeyboardShortcut.defaultShortcuts
+        }
+
+        // Every action appears in the list so users can assign a shortcut to any of them.
+        let existingActions = Set(shortcuts.map { $0.action })
+        for action in SnapAction.allCases where !existingActions.contains(action) {
+            shortcuts.append(KeyboardShortcut(action: action, keyCode: 0, modifiers: 0, isEnabled: false))
         }
 
         if let data = defaults.data(forKey: Keys.layoutProfiles),

@@ -52,8 +52,20 @@
 "Apply" = "Uygula";
 "%lld windows" = "%lld pencere";
 
+/* Actions */
+"Left Third" = "Sol Üçte Bir";
+"Center Third" = "Orta Üçte Bir";
+"Right Third" = "Sağ Üçte Bir";
+"Two Thirds Left" = "Sol Üçte İki";
+"Two Thirds Right" = "Sağ Üçte İki";
+
 /* Settings */
 "Tune Panevo to your workflow" = "Panevo'yu çalışma şekline göre ayarla";
+"Snapping" = "Yaslama";
+"Window Gap" = "Pencere Boşluğu";
+"Space between snapped windows" = "Yaslanan pencereler arasındaki boşluk";
+"Edge Sensitivity" = "Kenar Hassasiyeti";
+"How close to the screen edge drag snapping triggers" = "Sürüklemede kenara ne kadar yaklaşınca yaslama tetiklenir";
 "General" = "Genel";
 "Launch at Login" = "Girişte Başlat";
 "Start Panevo automatically when you log in" = "Oturum açtığında Panevo otomatik başlasın";
