@@ -69,7 +69,9 @@ Dock ikonu yok — Panevo tamamen menü çubuğunda yaşar; hızlı yaslama eyle
 
 [**Releases**](https://github.com/bkrdmrcioglu/panevo/releases) sayfasından son DMG'yi indir, aç ve Panevo'yu Applications'a sürükle.
 
-> İlk açılış: sağ tık → Aç (imzasız build), ardından Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik'ten izin ver. Bu izin, diğer uygulamaların pencerelerini taşıyabilmek için tüm pencere yöneticilerinde zorunludur.
+Uygulama **Apple tarafından imzalı ve onaylıdır (notarized)** — güvenlik uyarısı çıkmaz, direkt açılır.
+
+> İlk açılış: Sistem Ayarları → Gizlilik ve Güvenlik → Erişilebilirlik'ten izin ver. Bu izin, diğer uygulamaların pencerelerini taşıyabilmek için tüm pencere yöneticilerinde zorunludur.
 
 ### Neden App Store'da değil?
 App Store, App Sandbox'ı zorunlu kılar; sandbox'lı uygulamalar ise diğer uygulamaların pencerelerini kontrol edemez — ki bu bir pencere yöneticisinin varlık sebebidir. Rectangle'ın da App Store'da olmamasının nedeni aynıdır.
