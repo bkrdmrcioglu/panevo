@@ -67,7 +67,12 @@ Dock ikonu yok — Panevo tamamen menü çubuğunda yaşar; hızlı yaslama eyle
 
 ## 📥 Kurulum
 
-[**Releases**](https://github.com/bkrdmrcioglu/panevo/releases) sayfasından son DMG'yi indir, aç ve Panevo'yu Applications'a sürükle.
+**Homebrew** (önerilen):
+```bash
+brew install --cask bkrdmrcioglu/tap/panevo
+```
+
+**Elle**: [**Releases**](https://github.com/bkrdmrcioglu/panevo/releases) sayfasından son DMG'yi indir, aç ve Panevo'yu Applications'a sürükle.
 
 Uygulama **Apple tarafından imzalı ve onaylıdır (notarized)** — güvenlik uyarısı çıkmaz, direkt açılır.
 
