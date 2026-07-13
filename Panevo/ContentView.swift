@@ -718,6 +718,35 @@ struct SettingsPaneView: View {
                         .labelsHidden()
                     }
                 }
+
+                SectionLabel(text: "Support", icon: "heart.fill")
+
+                Button(action: {
+                    if let url = URL(string: "https://buymeacoffee.com/bkrdmrcioglu") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    HStack(spacing: 10) {
+                        Text("☕")
+                            .font(.system(size: 18))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Buy Me a Coffee")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(.primary)
+                            Text("Panevo is free — support keeps it going!")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Card())
+                }
+                .buttonStyle(.plain)
             }
             .padding(28)
         }
