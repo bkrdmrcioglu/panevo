@@ -131,6 +131,11 @@ Panevo/
 - Girişte başlatma
 - Türkçe ve İngilizce arayüz
 
+## 🤝 Katkıda Bulunma
+
+Katkılar memnuniyetle karşılanır! Başlamadan önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına göz at.
+Hata bildirimi ve özellik önerileri için [issue şablonlarını](https://github.com/bkrdmrcioglu/panevo/issues/new/choose) kullan.
+
 ## 📄 Lisans
 
 [MIT](LICENSE) — © 2026 Bekir Demircioglu
