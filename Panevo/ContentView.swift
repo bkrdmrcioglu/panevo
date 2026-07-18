@@ -1,5 +1,6 @@
 import SwiftUI
 import Carbon
+import AppKit
 
 // MARK: - Root
 
@@ -11,6 +12,7 @@ struct ContentView: View {
         case dashboard = "Dashboard"
         case shortcuts = "Shortcuts"
         case layouts = "Layouts"
+        case rules = "Rules"
         case settings = "Settings"
 
         var id: String { rawValue }
@@ -20,6 +22,7 @@ struct ContentView: View {
             case .dashboard: return "square.grid.2x2.fill"
             case .shortcuts: return "keyboard.fill"
             case .layouts: return "rectangle.3.group.fill"
+            case .rules: return "app.badge.checkmark.fill"
             case .settings: return "gearshape.fill"
             }
         }
@@ -55,6 +58,8 @@ struct ContentView: View {
                     ShortcutsView(viewModel: viewModel)
                 case .layouts:
                     LayoutsView(viewModel: viewModel)
+                case .rules:
+                    RulesPaneView()
                 case .settings:
                     SettingsPaneView()
                 }
@@ -648,10 +653,218 @@ struct LayoutsView: View {
     }
 }
 
+// MARK: - Rules
+
+struct RulesPaneView: View {
+    @ObservedObject private var settings = SettingsManager.shared
+    @State private var selectedPID: pid_t = 0
+    @State private var selectedPosition: WindowPosition = .leftHalf
+    @State private var ignoredAppID = ""
+
+    private var runningApps: [NSRunningApplication] {
+        NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular && $0.bundleIdentifier != nil }
+            .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                PageHeader(
+                    title: "Rules",
+                    subtitle: "App-specific snap rules and ignore list"
+                )
+
+                SectionLabel(text: "App Rules", icon: "app.badge.checkmark")
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        Picker("App", selection: $selectedPID) {
+                            Text("Select app…").tag(pid_t(0))
+                            ForEach(runningApps, id: \.processIdentifier) { app in
+                                Text(app.localizedName ?? app.bundleIdentifier ?? "?")
+                                    .tag(app.processIdentifier)
+                            }
+                        }
+                        .frame(maxWidth: 260)
+
+                        Picker("Position", selection: $selectedPosition) {
+                            ForEach(WindowPosition.allCases, id: \.self) { pos in
+                                Text(LocalizedStringKey(pos.displayName)).tag(pos)
+                            }
+                        }
+                        .frame(maxWidth: 200)
+
+                        Button("Add Rule") {
+                            guard let app = runningApps.first(where: { $0.processIdentifier == selectedPID }),
+                                  let bundleID = app.bundleIdentifier else { return }
+                            settings.saveAppRule(AppRule(
+                                bundleIdentifier: bundleID,
+                                applicationName: app.localizedName ?? bundleID,
+                                position: selectedPosition
+                            ))
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selectedPID == 0)
+                    }
+
+                    Text("When the app becomes frontmost, Panevo snaps its window to the chosen position.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+
+                    ForEach(settings.appRules) { rule in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(rule.applicationName)
+                                    .font(.system(size: 13, weight: .medium))
+                                Text("\(rule.bundleIdentifier) → \(rule.position.displayName)")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { rule.isEnabled },
+                                set: { enabled in
+                                    var updated = rule
+                                    updated.isEnabled = enabled
+                                    settings.saveAppRule(updated)
+                                }
+                            ))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+
+                            Button {
+                                settings.deleteAppRule(rule)
+                            } label: {
+                                Image(systemName: "trash").foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Card())
+                    }
+                }
+
+                SectionLabel(text: "Ignore List", icon: "eye.slash")
+
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Picker("Ignore", selection: $ignoredAppID) {
+                            Text("Select app…").tag("")
+                            ForEach(runningApps, id: \.processIdentifier) { app in
+                                Text(app.localizedName ?? "?")
+                                    .tag(app.bundleIdentifier ?? "")
+                            }
+                        }
+                        .frame(maxWidth: 280)
+
+                        Button("Add") {
+                            settings.addIgnoredApp(ignoredAppID)
+                            ignoredAppID = ""
+                        }
+                        .disabled(ignoredAppID.isEmpty)
+                    }
+
+                    Text("Ignored apps skip drag-to-snap and title-bar double-click.")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+
+                    ForEach(settings.ignoredBundleIdentifiers, id: \.self) { bundleID in
+                        HStack {
+                            Text(bundleID)
+                                .font(.system(size: 12, design: .monospaced))
+                            Spacer()
+                            Button {
+                                settings.removeIgnoredApp(bundleID)
+                            } label: {
+                                Image(systemName: "trash").foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Card())
+                    }
+                }
+
+                SectionLabel(text: "Display Profiles", icon: "display.2")
+
+                DisplayProfilesSection()
+            }
+            .padding(28)
+        }
+    }
+}
+
+struct DisplayProfilesSection: View {
+    @ObservedObject private var settings = SettingsManager.shared
+    @State private var displayCount = max(NSScreen.screens.count, 1)
+    @State private var selectedProfileID: UUID?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: $settings.autoApplyDisplayProfiles) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto-apply on display change")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("When you dock or undock, apply the layout bound to that display count")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Card())
+
+            HStack(spacing: 10) {
+                Stepper("Displays: \(displayCount)", value: $displayCount, in: 1...6)
+
+                Picker("Layout", selection: $selectedProfileID) {
+                    Text("Select layout…").tag(Optional<UUID>.none)
+                    ForEach(settings.layoutProfiles) { profile in
+                        Text(profile.displayName).tag(Optional(profile.id))
+                    }
+                }
+                .frame(maxWidth: 220)
+
+                Button("Bind") {
+                    guard let id = selectedProfileID else { return }
+                    settings.saveDisplayBinding(DisplayProfileBinding(
+                        displayCount: displayCount,
+                        layoutProfileID: id
+                    ))
+                }
+                .disabled(selectedProfileID == nil || settings.layoutProfiles.isEmpty)
+            }
+
+            ForEach(settings.displayProfileBindings) { binding in
+                let name = settings.layoutProfiles.first { $0.id == binding.layoutProfileID }?.displayName ?? "?"
+                HStack {
+                    Text("\(binding.displayCount) display(s) → \(name)")
+                        .font(.system(size: 13))
+                    Spacer()
+                    Button {
+                        settings.deleteDisplayBinding(binding)
+                    } label: {
+                        Image(systemName: "trash").foregroundColor(.red)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Card())
+            }
+        }
+    }
+}
+
 // MARK: - Settings
 
 struct SettingsPaneView: View {
     @ObservedObject private var settings = SettingsManager.shared
+    @ObservedObject private var updater = UpdateChecker.shared
 
     var body: some View {
         ScrollView {
@@ -672,6 +885,18 @@ struct SettingsPaneView: View {
 
                     settingRow(title: "Snap Overlay", subtitle: "Show a preview overlay while dragging windows to screen edges") {
                         Toggle("", isOn: $settings.showOverlay)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                    }
+
+                    settingRow(title: "Title Bar Double-Click", subtitle: "Double-click a window title bar to maximize") {
+                        Toggle("", isOn: $settings.titleBarDoubleClickEnabled)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                    }
+
+                    settingRow(title: "Modifier Drag Palette", subtitle: "Hold ⌃⌥ while dragging a window to open the snap palette") {
+                        Toggle("", isOn: $settings.modifierDragEnabled)
                             .toggleStyle(.switch)
                             .labelsHidden()
                     }
@@ -717,6 +942,61 @@ struct SettingsPaneView: View {
                         .frame(maxWidth: 320)
                         .labelsHidden()
                     }
+                }
+
+                SectionLabel(text: "Backup", icon: "square.and.arrow.up.on.square")
+
+                HStack(spacing: 12) {
+                    Button("Export Settings") {
+                        _ = settings.exportToFile()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Import Settings") {
+                        _ = settings.importFromFile()
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                SectionLabel(text: "Updates", icon: "arrow.triangle.2.circlepath")
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Version \(updater.currentVersion)")
+                                .font(.system(size: 13, weight: .semibold))
+                            if updater.isUpdateAvailable, let latest = updater.latestVersion {
+                                Text("Update available: \(latest)")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.green)
+                            } else if updater.isChecking {
+                                Text("Checking…")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            } else if let err = updater.lastError {
+                                Text(err)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            } else {
+                                Text("You're up to date")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        Spacer()
+                        Button(updater.isUpdateAvailable ? "Download" : "Check") {
+                            if updater.isUpdateAvailable, let url = updater.releaseURL {
+                                NSWorkspace.shared.open(url)
+                            } else {
+                                updater.checkForUpdates()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(updater.isChecking)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Card())
                 }
 
                 SectionLabel(text: "Support", icon: "heart.fill")

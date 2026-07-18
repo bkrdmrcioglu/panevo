@@ -8,7 +8,7 @@ Panevo is a lightweight menu bar app that lets you arrange your windows in secon
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)
-![Version](https://img.shields.io/badge/version-1.2-green)
+![Version](https://img.shields.io/badge/version-1.3.0-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 [![Buy Me A Coffee](https://img.shields.io/badge/☕-Buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/bkrdmrcioglu)
 
@@ -121,6 +121,14 @@ Panevo/
 - ✅ All settings stored locally
 
 ## 📝 Changelog
+
+### 1.3.0
+- Sixths, 40/60 splits, and almost-maximize positions
+- Undo, tile all windows, visual snap palette
+- App rules, ignore list, display-profile bindings
+- Title-bar double-click, ⌃⌥-drag palette
+- Settings export/import, first-launch onboarding
+- Update check via GitHub Releases
 
 ### 1.2
 - Window gaps with adjustable size
