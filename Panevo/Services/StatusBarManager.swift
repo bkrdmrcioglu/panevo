@@ -118,7 +118,7 @@ class StatusBarManager: NSObject {
     }
 
     @objc private func checkUpdates() {
-        UpdateChecker.shared.checkForUpdates(openIfAvailable: true)
+        UpdateChecker.shared.checkForUpdates(installIfAvailable: true)
     }
 
     @objc private func openMainWindow() {

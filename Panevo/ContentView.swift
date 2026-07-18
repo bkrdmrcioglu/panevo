@@ -965,7 +965,11 @@ struct SettingsPaneView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Version \(updater.currentVersion)")
                                 .font(.system(size: 13, weight: .semibold))
-                            if updater.isUpdateAvailable, let latest = updater.latestVersion {
+                            if updater.isInstalling {
+                                Text(updater.installStatus.isEmpty ? "Installing…" : updater.installStatus)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            } else if updater.isUpdateAvailable, let latest = updater.latestVersion {
                                 Text("Update available: \(latest)")
                                     .font(.system(size: 11))
                                     .foregroundColor(.green)
@@ -984,20 +988,27 @@ struct SettingsPaneView: View {
                             }
                         }
                         Spacer()
-                        Button(updater.isUpdateAvailable ? "Download" : "Check") {
-                            if updater.isUpdateAvailable, let url = updater.releaseURL {
-                                NSWorkspace.shared.open(url)
+                        Button(updater.isUpdateAvailable || updater.isInstalling ? "Install Update" : "Check") {
+                            if updater.isUpdateAvailable || updater.isInstalling {
+                                updater.installUpdate()
                             } else {
                                 updater.checkForUpdates()
                             }
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(updater.isChecking)
+                        .disabled(updater.isChecking || updater.isInstalling)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Card())
+
+                    if updater.isInstalling {
+                        ProgressView(value: updater.downloadProgress)
+                            .progressViewStyle(.linear)
+                            .padding(.horizontal, 4)
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Card())
+
 
                 SectionLabel(text: "Support", icon: "heart.fill")
 

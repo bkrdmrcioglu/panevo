@@ -115,6 +115,16 @@
 "Checking…" = "Checking…";
 "Download" = "Download";
 "Check" = "Check";
+"Install Update" = "Install Update";
+"Downloading update…" = "Downloading update…";
+"Downloading update… %d%%" = "Downloading update… %d%%";
+"Installing…" = "Installing…";
+"Restarting…" = "Restarting…";
+"Could not parse release info" = "Could not parse release info";
+"No DMG found in the latest release" = "No DMG found in the latest release";
+"Download failed" = "Download failed";
+"Could not open the update disk image" = "Could not open the update disk image";
+"Panevo.app not found in the update package" = "Panevo.app not found in the update package";
 "Almost Maximize" = "Almost Maximize";
 "Left 40%" = "Left 40%";
 "Right 60%" = "Right 60%";
