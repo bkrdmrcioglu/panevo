@@ -8,7 +8,7 @@ Panevo, pencerelerinizi klavye kısayolları, menü çubuğu veya kenara sürük
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.9%2B-orange)
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-1.3.0-green)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-1.3.1-green)
 ![Lisans](https://img.shields.io/badge/lisans-MIT-lightgrey)
 [![Buy Me A Coffee](https://img.shields.io/badge/☕-Bana%20bir%20kahve%20%C4%B1smarla-FFDD00)](https://buymeacoffee.com/bkrdmrcioglu)
 
@@ -121,6 +121,9 @@ Panevo/
 - ✅ Tüm ayarlar yalnızca yerel
 
 ## 📝 Sürüm Geçmişi
+
+### 1.3.1
+- Uygulama içi güncelleme kontrolü için bakım sürümü
 
 ### 1.3.0
 - Altılılar, %40/%60 ve neredeyse büyüt pozisyonları
