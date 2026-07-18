@@ -115,6 +115,16 @@
 "Checking…" = "Kontrol ediliyor…";
 "Download" = "İndir";
 "Check" = "Kontrol Et";
+"Install Update" = "Güncellemeyi Kur";
+"Downloading update…" = "Güncelleme indiriliyor…";
+"Downloading update… %d%%" = "Güncelleme indiriliyor… %d%%";
+"Installing…" = "Kuruluyor…";
+"Restarting…" = "Yeniden başlatılıyor…";
+"Could not parse release info" = "Sürüm bilgisi okunamadı";
+"No DMG found in the latest release" = "Son sürümde DMG bulunamadı";
+"Download failed" = "İndirme başarısız";
+"Could not open the update disk image" = "Güncelleme disk görüntüsü açılamadı";
+"Panevo.app not found in the update package" = "Güncelleme paketinde Panevo.app yok";
 "Almost Maximize" = "Neredeyse Büyüt";
 "Left 40%" = "Sol %40";
 "Right 60%" = "Sağ %60";
