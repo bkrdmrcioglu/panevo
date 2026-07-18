@@ -14,8 +14,10 @@ extension Bundle {
         return infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }
 
-    var bundleIdentifier: String {
-        return self.bundleIdentifier ?? "unknown"
+    /// Non-optional bundle id — do not name this `bundleIdentifier` or it shadows
+    /// Foundation's property and recurses until the stack overflows.
+    var identifierString: String {
+        infoDictionary?["CFBundleIdentifier"] as? String ?? "unknown"
     }
 
     var displayName: String {

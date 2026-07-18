@@ -1,31 +1,54 @@
 import Foundation
 import AppKit
+import Carbon
 
 class WindowManager {
     private let displayManager: DisplayManager
     private let accessibilityManager: AccessibilityManager
     private var dragMonitor: Any?
+    private var clickMonitor: Any?
     private lazy var overlayManager = SnapOverlayManager(displayManager: displayManager)
+    private lazy var paletteManager = SnapPaletteManager(
+        displayManager: displayManager,
+        onSelect: { [weak self] position, displayID in
+            self?.snapWindowToDisplay(displayID, position: position)
+        }
+    )
     private var isDraggingNearEdge = false
 
     // Pre-snap frames so Restore can return windows to their original size.
     private var restoreFrames: [(window: AXUIElement, frame: CGRect)] = []
 
-    // Drag tracking: only treat a drag as a window drag when the frontmost
-    // window actually moves with the mouse.
+    // Global undo stack of previous frames (last snap action).
+    private var undoStack: [(window: AXUIElement, frame: CGRect)] = []
+
+    // Drag tracking
     private var dragCandidateWindow: AXUIElement?
     private var dragStartOrigin: CGPoint?
     private var isWindowDrag = false
+    private var isModifierPaletteDrag = false
+
+    // App rules
+    private var appActivationObserver: NSObjectProtocol?
+    private var lastRuledBundleID: String?
 
     init(displayManager: DisplayManager, accessibilityManager: AccessibilityManager) {
         self.displayManager = displayManager
         self.accessibilityManager = accessibilityManager
         setupDragMonitoring()
+        setupTitleBarDoubleClick()
+        setupAppRuleObserver()
     }
 
     deinit {
         if let monitor = dragMonitor {
             NSEvent.removeMonitor(monitor)
+        }
+        if let monitor = clickMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+        if let observer = appActivationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
     }
 
@@ -34,8 +57,10 @@ class WindowManager {
     func snapWindow(to position: WindowPosition) {
         guard let frontmostWindow = getFrontmostWindow() else { return }
         guard let screen = NSScreen.main else { return }
+        guard !isFrontmostIgnored() else { return }
 
         let resolved = cycledPosition(for: position, window: frontmostWindow, screen: screen)
+        pushUndo(for: frontmostWindow)
         rememberFrameIfNeeded(frontmostWindow)
         moveWindow(frontmostWindow, to: targetFrame(for: resolved, on: screen), animated: shouldAnimate)
     }
@@ -43,13 +68,13 @@ class WindowManager {
     func snapWindowToDisplay(_ displayID: CGDirectDisplayID, position: WindowPosition) {
         guard let frontmostWindow = getFrontmostWindow() else { return }
         guard let screen = NSScreen.screen(for: displayID) else { return }
+        guard !isFrontmostIgnored() else { return }
 
+        pushUndo(for: frontmostWindow)
         rememberFrameIfNeeded(frontmostWindow)
         moveWindow(frontmostWindow, to: targetFrame(for: position, on: screen), animated: shouldAnimate)
     }
 
-    // Final AX frame for a position: gap-adjusted and coordinate-converted.
-    // Insetting each side by gap/2 yields a full gap between adjacent windows.
     private func targetFrame(for position: WindowPosition, on screen: NSScreen) -> CGRect {
         var frame = position.getFrame(for: screen)
         let gap = CGFloat(SettingsManager.shared.windowGap)
@@ -59,11 +84,10 @@ class WindowManager {
         return axFrame(from: frame)
     }
 
-    // Pressing the same half-snap shortcut again cycles half → third → two thirds.
     private func cycledPosition(for position: WindowPosition, window: AXUIElement, screen: NSScreen) -> WindowPosition {
         let cycles: [WindowPosition: [WindowPosition]] = [
-            .leftHalf: [.leftHalf, .thirdLeft, .twoThirdsLeft],
-            .rightHalf: [.rightHalf, .thirdRight, .twoThirdsRight],
+            .leftHalf: [.leftHalf, .thirdLeft, .twoThirdsLeft, .leftTwoFifths, .leftThreeFifths],
+            .rightHalf: [.rightHalf, .thirdRight, .twoThirdsRight, .rightThreeFifths, .rightTwoFifths],
         ]
 
         guard let cycle = cycles[position],
@@ -84,7 +108,23 @@ class WindowManager {
         return position
     }
 
-    // MARK: - Restore
+    // MARK: - Undo / Restore
+
+    private func pushUndo(for window: AXUIElement) {
+        guard let position = accessibilityManager.getWindowPosition(from: window),
+              let size = accessibilityManager.getWindowSize(from: window) else {
+            return
+        }
+        undoStack.append((window, CGRect(origin: position, size: size)))
+        if undoStack.count > 50 {
+            undoStack.removeFirst()
+        }
+    }
+
+    func undoLastSnap() {
+        guard let entry = undoStack.popLast() else { return }
+        moveWindow(entry.window, to: entry.frame, animated: shouldAnimate)
+    }
 
     private func rememberFrameIfNeeded(_ window: AXUIElement) {
         guard !restoreFrames.contains(where: { CFEqual($0.window, window) }),
@@ -105,16 +145,73 @@ class WindowManager {
             return
         }
 
+        pushUndo(for: window)
         moveWindow(window, to: entry.frame, animated: shouldAnimate)
         restoreFrames.removeAll { CFEqual($0.window, window) }
+    }
+
+    // MARK: - Tile All
+
+    func tileAllWindows() {
+        guard let screen = NSScreen.main else { return }
+        let ownPid = ProcessInfo.processInfo.processIdentifier
+        var windows: [AXUIElement] = []
+
+        for app in NSWorkspace.shared.runningApplications {
+            guard app.activationPolicy == .regular,
+                  app.processIdentifier != ownPid,
+                  let bundleID = app.bundleIdentifier,
+                  !SettingsManager.shared.isIgnored(bundleID),
+                  let element = accessibilityManager.getAccessibilityElement(for: app.processIdentifier) else {
+                continue
+            }
+            for window in accessibilityManager.getAllWindows(from: element) {
+                if accessibilityManager.getWindowTitle(from: window) != nil {
+                    windows.append(window)
+                }
+            }
+        }
+
+        guard !windows.isEmpty else { return }
+
+        let count = windows.count
+        let columns = Int(ceil(sqrt(Double(count))))
+        let rows = Int(ceil(Double(count) / Double(columns)))
+        let visible = screen.visibleFrame
+        let gap = CGFloat(SettingsManager.shared.windowGap)
+        let cellWidth = (visible.width - gap * CGFloat(columns + 1)) / CGFloat(columns)
+        let cellHeight = (visible.height - gap * CGFloat(rows + 1)) / CGFloat(rows)
+
+        for (index, window) in windows.enumerated() {
+            let col = index % columns
+            let row = index / columns
+            let cocoa = CGRect(
+                x: visible.minX + gap + CGFloat(col) * (cellWidth + gap),
+                y: visible.minY + gap + CGFloat(rows - 1 - row) * (cellHeight + gap),
+                width: cellWidth,
+                height: cellHeight
+            )
+            pushUndo(for: window)
+            rememberFrameIfNeeded(window)
+            moveWindow(window, to: axFrame(from: cocoa), animated: shouldAnimate)
+        }
+    }
+
+    // MARK: - Snap Palette
+
+    func showSnapPalette() {
+        guard let screen = NSScreen.main else { return }
+        paletteManager.show(on: screen)
+    }
+
+    func hideSnapPalette() {
+        paletteManager.hide()
     }
 
     private var shouldAnimate: Bool {
         return SettingsManager.shared.animationStyle != .instant
     }
 
-    // Cocoa coordinates have a bottom-left origin; the Accessibility API expects
-    // a top-left origin relative to the primary screen.
     private func axFrame(from cocoaFrame: CGRect) -> CGRect {
         guard let primaryScreen = NSScreen.screens.first else { return cocoaFrame }
         let flippedY = primaryScreen.frame.maxY - cocoaFrame.maxY
@@ -126,6 +223,7 @@ class WindowManager {
         guard let currentDisplay = getDisplayForWindow(frontmostWindow) else { return }
         guard let nextDisplay = displayManager.getNextDisplay(from: currentDisplay) else { return }
 
+        pushUndo(for: frontmostWindow)
         moveWindowToDisplay(frontmostWindow, displayID: nextDisplay.id, preserveRelativePosition: true)
     }
 
@@ -134,6 +232,7 @@ class WindowManager {
         guard let currentDisplay = getDisplayForWindow(frontmostWindow) else { return }
         guard let previousDisplay = displayManager.getPreviousDisplay(from: currentDisplay) else { return }
 
+        pushUndo(for: frontmostWindow)
         moveWindowToDisplay(frontmostWindow, displayID: previousDisplay.id, preserveRelativePosition: true)
     }
 
@@ -142,8 +241,6 @@ class WindowManager {
     func getFrontmostWindow() -> AXUIElement? {
         guard var pid = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return nil }
 
-        // When triggered from Panevo's own UI, target the window below ours
-        // instead of snapping our own window.
         if pid == ProcessInfo.processInfo.processIdentifier {
             guard let otherPid = topmostOtherApplicationPid() else { return nil }
             pid = otherPid
@@ -155,6 +252,15 @@ class WindowManager {
             return focusedWindow
         }
         return accessibilityManager.getAllWindows(from: element).first
+    }
+
+    private func frontmostBundleID() -> String? {
+        NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+    }
+
+    private func isFrontmostIgnored() -> Bool {
+        guard let bundleID = frontmostBundleID() else { return false }
+        return SettingsManager.shared.isIgnored(bundleID)
     }
 
     private func topmostOtherApplicationPid() -> pid_t? {
@@ -214,7 +320,74 @@ class WindowManager {
         return displayManager.getDisplayContainingFrame(frame)
     }
 
-    // MARK: - Private Methods
+    // MARK: - App Rules
+
+    private func setupAppRuleObserver() {
+        appActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.handleAppActivation(notification)
+        }
+    }
+
+    private func handleAppActivation(_ notification: Notification) {
+        guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              let bundleID = app.bundleIdentifier,
+              bundleID != Bundle.main.identifierString else {
+            return
+        }
+
+        guard let rule = SettingsManager.shared.rule(forBundleIdentifier: bundleID) else {
+            lastRuledBundleID = nil
+            return
+        }
+
+        // Avoid re-snapping the same app repeatedly while switching within it.
+        if lastRuledBundleID == bundleID { return }
+        lastRuledBundleID = bundleID
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.snapWindow(to: rule.position)
+        }
+    }
+
+    // MARK: - Title Bar Double Click
+
+    private func setupTitleBarDoubleClick() {
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            guard SettingsManager.shared.titleBarDoubleClickEnabled,
+                  event.clickCount == 2 else { return }
+            self?.handleTitleBarDoubleClick(at: NSEvent.mouseLocation)
+        }
+    }
+
+    private func handleTitleBarDoubleClick(at point: CGPoint) {
+        guard !isFrontmostIgnored(),
+              let window = getFrontmostWindow(),
+              let axOrigin = accessibilityManager.getWindowPosition(from: window),
+              let axSize = accessibilityManager.getWindowSize(from: window),
+              let primary = NSScreen.screens.first else {
+            return
+        }
+
+        // Convert AX (top-left) to Cocoa (bottom-left) for hit testing.
+        let cocoaY = primary.frame.maxY - axOrigin.y - axSize.height
+        let cocoaFrame = CGRect(x: axOrigin.x, y: cocoaY, width: axSize.width, height: axSize.height)
+        let titleBarHeight: CGFloat = 28
+        let titleBar = CGRect(
+            x: cocoaFrame.minX,
+            y: cocoaFrame.maxY - titleBarHeight,
+            width: cocoaFrame.width,
+            height: titleBarHeight
+        )
+
+        guard titleBar.contains(point) else { return }
+        snapWindow(to: .fullScreen)
+    }
+
+    // MARK: - Private move helpers
 
     private func moveWindow(_ window: AXUIElement, to frame: CGRect, animated: Bool) {
         if animated {
@@ -278,6 +451,8 @@ class WindowManager {
         }
     }
 
+    // MARK: - Drag Monitoring
+
     private func setupDragMonitoring() {
         dragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged, .leftMouseUp]) { [weak self] event in
             self?.handleDragEvent(event)
@@ -291,12 +466,23 @@ class WindowManager {
         case .leftMouseDragged:
             trackWindowDrag()
             if isWindowDrag {
-                updateDragOverlay(at: mouseLocation)
+                if SettingsManager.shared.modifierDragEnabled && isControlOptionHeld(event) {
+                    isModifierPaletteDrag = true
+                    updateModifierPalette(at: mouseLocation)
+                } else {
+                    updateDragOverlay(at: mouseLocation)
+                }
             }
         case .leftMouseUp:
-            hideDragOverlay()
-            if isWindowDrag {
-                handleDragRelease(at: mouseLocation)
+            if isModifierPaletteDrag {
+                paletteManager.selectAt(mouseLocation)
+                paletteManager.hide()
+                isModifierPaletteDrag = false
+            } else {
+                hideDragOverlay()
+                if isWindowDrag {
+                    handleDragRelease(at: mouseLocation)
+                }
             }
             resetDragTracking()
         default:
@@ -304,7 +490,22 @@ class WindowManager {
         }
     }
 
+    private func isControlOptionHeld(_ event: NSEvent) -> Bool {
+        event.modifierFlags.contains(.control) && event.modifierFlags.contains(.option)
+    }
+
+    private func updateModifierPalette(at point: CGPoint) {
+        guard let screen = screenUnderMouse(point) else { return }
+        paletteManager.show(on: screen)
+        paletteManager.highlightAt(point)
+    }
+
     private func trackWindowDrag() {
+        if isFrontmostIgnored() {
+            resetDragTracking()
+            return
+        }
+
         if dragCandidateWindow == nil {
             dragCandidateWindow = getFrontmostWindow()
             if let window = dragCandidateWindow {
@@ -320,7 +521,6 @@ class WindowManager {
             return
         }
 
-        // The window only moves with the cursor when its title bar is being dragged.
         if abs(currentOrigin.x - startOrigin.x) > 5 || abs(currentOrigin.y - startOrigin.y) > 5 {
             isWindowDrag = true
         }

@@ -19,21 +19,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var accessibilityManager: AccessibilityManager?
     private var settingsManager: SettingsManager?
     private var displayManager: DisplayManager?
+    private var displayProfileService: DisplayProfileService?
     private var trustPollTimer: Timer?
+    private var onboardingWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // LSUIElement keeps the app out of the Dock; it lives in the menu bar.
-        // Activate so the main window is visible on first launch.
         NSApp.activate(ignoringOtherApps: true)
 
         setupManagers()
         requestAccessibilityPermission()
         relaunchWhenAccessibilityGranted()
+        showOnboardingIfNeeded()
+        UpdateChecker.shared.checkForUpdates()
     }
 
-    // macOS does not fully apply a newly granted Accessibility permission to an
-    // already-running process. Watch for the grant and relaunch automatically,
-    // the same way Rectangle does.
     private func relaunchWhenAccessibilityGranted() {
         guard accessibilityManager?.isAccessibilityEnabled == false else { return }
 
@@ -59,10 +58,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowManager = WindowManager(displayManager: displayManager!, accessibilityManager: accessibilityManager!)
         hotKeyManager = HotKeyManager(windowManager: windowManager!)
         statusBarManager = StatusBarManager(hotKeyManager: hotKeyManager!, settingsManager: settingsManager!, windowManager: windowManager)
+
+        let layoutManager = LayoutProfileManager(
+            accessibilityManager: accessibilityManager!,
+            displayManager: displayManager!
+        )
+        displayProfileService = DisplayProfileService(
+            displayManager: displayManager!,
+            layoutProfileManager: layoutManager
+        )
     }
 
     private func requestAccessibilityPermission() {
         accessibilityManager?.requestAccessibilityPermission()
+    }
+
+    private func showOnboardingIfNeeded() {
+        guard !SettingsManager.shared.hasCompletedOnboarding else { return }
+
+        let view = OnboardingView { [weak self] in
+            self?.onboardingWindow?.close()
+            self?.onboardingWindow = nil
+        }
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 420),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Welcome to Panevo"
+        window.contentView = NSHostingView(rootView: view)
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.makeKeyAndOrderFront(nil)
+        onboardingWindow = window
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

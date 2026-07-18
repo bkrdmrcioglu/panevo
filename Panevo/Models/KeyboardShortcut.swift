@@ -116,8 +116,12 @@ struct KeyboardShortcut: Identifiable, Codable, Equatable {
             KeyboardShortcut(action: .fullScreen, keyCode: UInt32(kVK_Return), modifiers: ctrlOpt),
             KeyboardShortcut(action: .center, keyCode: UInt32(kVK_ANSI_C), modifiers: ctrlOpt),
             KeyboardShortcut(action: .restore, keyCode: UInt32(kVK_Delete), modifiers: ctrlOpt),
+            KeyboardShortcut(action: .undo, keyCode: UInt32(kVK_ANSI_Z), modifiers: ctrlOpt),
             KeyboardShortcut(action: .moveToNextDisplay, keyCode: UInt32(kVK_ANSI_N), modifiers: ctrlOpt),
             KeyboardShortcut(action: .moveToPreviousDisplay, keyCode: UInt32(kVK_ANSI_P), modifiers: ctrlOpt),
+            KeyboardShortcut(action: .tileAll, keyCode: UInt32(kVK_ANSI_T), modifiers: ctrlOpt, isEnabled: false),
+            KeyboardShortcut(action: .showPalette, keyCode: UInt32(kVK_Space), modifiers: ctrlOpt, isEnabled: false),
+            KeyboardShortcut(action: .almostMaximize, keyCode: UInt32(kVK_ANSI_M), modifiers: ctrlOpt, isEnabled: false),
         ]
     }
 
@@ -142,86 +146,92 @@ enum SnapAction: String, Codable, CaseIterable, Identifiable {
     case thirdRight
     case twoThirdsLeft
     case twoThirdsRight
+    case topLeftSixth
+    case topCenterSixth
+    case topRightSixth
+    case bottomLeftSixth
+    case bottomCenterSixth
+    case bottomRightSixth
+    case leftTwoFifths
+    case rightThreeFifths
+    case leftThreeFifths
+    case rightTwoFifths
+    case almostMaximize
     case moveToNextDisplay
     case moveToPreviousDisplay
     case restore
+    case undo
+    case tileAll
+    case showPalette
 
     var id: String { self.rawValue }
 
     var displayName: String {
         switch self {
-        case .leftHalf:
-            return "Left Half"
-        case .rightHalf:
-            return "Right Half"
-        case .topHalf:
-            return "Top Half"
-        case .bottomHalf:
-            return "Bottom Half"
-        case .fullScreen:
-            return "Full Screen"
-        case .center:
-            return "Center"
-        case .topLeft:
-            return "Top Left"
-        case .topRight:
-            return "Top Right"
-        case .bottomLeft:
-            return "Bottom Left"
-        case .bottomRight:
-            return "Bottom Right"
-        case .thirdLeft:
-            return "Left Third"
-        case .thirdCenter:
-            return "Center Third"
-        case .thirdRight:
-            return "Right Third"
-        case .twoThirdsLeft:
-            return "Two Thirds Left"
-        case .twoThirdsRight:
-            return "Two Thirds Right"
-        case .moveToNextDisplay:
-            return "Move to Next Display"
-        case .moveToPreviousDisplay:
-            return "Move to Previous Display"
-        case .restore:
-            return "Restore"
+        case .leftHalf: return "Left Half"
+        case .rightHalf: return "Right Half"
+        case .topHalf: return "Top Half"
+        case .bottomHalf: return "Bottom Half"
+        case .fullScreen: return "Full Screen"
+        case .center: return "Center"
+        case .topLeft: return "Top Left"
+        case .topRight: return "Top Right"
+        case .bottomLeft: return "Bottom Left"
+        case .bottomRight: return "Bottom Right"
+        case .thirdLeft: return "Left Third"
+        case .thirdCenter: return "Center Third"
+        case .thirdRight: return "Right Third"
+        case .twoThirdsLeft: return "Two Thirds Left"
+        case .twoThirdsRight: return "Two Thirds Right"
+        case .topLeftSixth: return "Top Left Sixth"
+        case .topCenterSixth: return "Top Center Sixth"
+        case .topRightSixth: return "Top Right Sixth"
+        case .bottomLeftSixth: return "Bottom Left Sixth"
+        case .bottomCenterSixth: return "Bottom Center Sixth"
+        case .bottomRightSixth: return "Bottom Right Sixth"
+        case .leftTwoFifths: return "Left 40%"
+        case .rightThreeFifths: return "Right 60%"
+        case .leftThreeFifths: return "Left 60%"
+        case .rightTwoFifths: return "Right 40%"
+        case .almostMaximize: return "Almost Maximize"
+        case .moveToNextDisplay: return "Move to Next Display"
+        case .moveToPreviousDisplay: return "Move to Previous Display"
+        case .restore: return "Restore"
+        case .undo: return "Undo Last Snap"
+        case .tileAll: return "Tile All Windows"
+        case .showPalette: return "Show Snap Palette"
         }
     }
 
     func getWindowPosition() -> WindowPosition? {
         switch self {
-        case .leftHalf:
-            return .leftHalf
-        case .rightHalf:
-            return .rightHalf
-        case .topHalf:
-            return .topHalf
-        case .bottomHalf:
-            return .bottomHalf
-        case .fullScreen:
-            return .fullScreen
-        case .center:
-            return .center
-        case .topLeft:
-            return .topLeft
-        case .topRight:
-            return .topRight
-        case .bottomLeft:
-            return .bottomLeft
-        case .bottomRight:
-            return .bottomRight
-        case .thirdLeft:
-            return .thirdLeft
-        case .thirdCenter:
-            return .thirdCenter
-        case .thirdRight:
-            return .thirdRight
-        case .twoThirdsLeft:
-            return .twoThirdsLeft
-        case .twoThirdsRight:
-            return .twoThirdsRight
-        case .moveToNextDisplay, .moveToPreviousDisplay, .restore:
+        case .leftHalf: return .leftHalf
+        case .rightHalf: return .rightHalf
+        case .topHalf: return .topHalf
+        case .bottomHalf: return .bottomHalf
+        case .fullScreen: return .fullScreen
+        case .center: return .center
+        case .topLeft: return .topLeft
+        case .topRight: return .topRight
+        case .bottomLeft: return .bottomLeft
+        case .bottomRight: return .bottomRight
+        case .thirdLeft: return .thirdLeft
+        case .thirdCenter: return .thirdCenter
+        case .thirdRight: return .thirdRight
+        case .twoThirdsLeft: return .twoThirdsLeft
+        case .twoThirdsRight: return .twoThirdsRight
+        case .topLeftSixth: return .topLeftSixth
+        case .topCenterSixth: return .topCenterSixth
+        case .topRightSixth: return .topRightSixth
+        case .bottomLeftSixth: return .bottomLeftSixth
+        case .bottomCenterSixth: return .bottomCenterSixth
+        case .bottomRightSixth: return .bottomRightSixth
+        case .leftTwoFifths: return .leftTwoFifths
+        case .rightThreeFifths: return .rightThreeFifths
+        case .leftThreeFifths: return .leftThreeFifths
+        case .rightTwoFifths: return .rightTwoFifths
+        case .almostMaximize: return .almostMaximize
+        case .moveToNextDisplay, .moveToPreviousDisplay, .restore, .undo, .tileAll, .showPalette:
             return nil
         }
     }

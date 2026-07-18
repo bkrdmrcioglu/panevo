@@ -38,7 +38,10 @@ class StatusBarManager: NSObject {
             (NSLocalizedString("Top Half", comment: ""), "rectangle.tophalf.filled", .topHalf),
             (NSLocalizedString("Bottom Half", comment: ""), "rectangle.bottomhalf.filled", .bottomHalf),
             (NSLocalizedString("Maximize", comment: ""), "rectangle.fill", .fullScreen),
+            (NSLocalizedString("Almost Maximize", comment: ""), "rectangle.inset.filled", .almostMaximize),
             (NSLocalizedString("Center", comment: ""), "rectangle.center.inset.filled", .center),
+            (NSLocalizedString("Left 40%", comment: ""), "rectangle.lefthalf.inset.filled", .leftTwoFifths),
+            (NSLocalizedString("Right 60%", comment: ""), "rectangle.righthalf.inset.filled", .rightThreeFifths),
         ]
 
         for (title, icon, position) in snapActions {
@@ -51,12 +54,34 @@ class StatusBarManager: NSObject {
 
         menu.addItem(.separator())
 
+        let paletteItem = NSMenuItem(title: NSLocalizedString("Show Snap Palette", comment: ""), action: #selector(showPalette), keyEquivalent: "")
+        paletteItem.target = self
+        paletteItem.image = NSImage(systemSymbolName: "square.grid.3x3", accessibilityDescription: "Palette")
+        menu.addItem(paletteItem)
+
+        let tileItem = NSMenuItem(title: NSLocalizedString("Tile All Windows", comment: ""), action: #selector(tileAll), keyEquivalent: "")
+        tileItem.target = self
+        tileItem.image = NSImage(systemSymbolName: "rectangle.split.3x3", accessibilityDescription: "Tile")
+        menu.addItem(tileItem)
+
+        let undoItem = NSMenuItem(title: NSLocalizedString("Undo Last Snap", comment: ""), action: #selector(undoSnap), keyEquivalent: "")
+        undoItem.target = self
+        undoItem.image = NSImage(systemSymbolName: "arrow.uturn.backward", accessibilityDescription: "Undo")
+        menu.addItem(undoItem)
+
+        menu.addItem(.separator())
+
         let nextDisplayItem = NSMenuItem(title: NSLocalizedString("Move to Next Display", comment: ""), action: #selector(moveToNextDisplay), keyEquivalent: "")
         nextDisplayItem.target = self
         nextDisplayItem.image = NSImage(systemSymbolName: "arrow.right.square", accessibilityDescription: "Next Display")
         menu.addItem(nextDisplayItem)
 
         menu.addItem(.separator())
+
+        let updateItem = NSMenuItem(title: NSLocalizedString("Check for Updates", comment: ""), action: #selector(checkUpdates), keyEquivalent: "")
+        updateItem.target = self
+        updateItem.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Updates")
+        menu.addItem(updateItem)
 
         let supportItem = NSMenuItem(title: NSLocalizedString("Buy Me a Coffee", comment: ""), action: #selector(openSupportPage), keyEquivalent: "")
         supportItem.target = self
@@ -76,8 +101,24 @@ class StatusBarManager: NSObject {
         windowManager?.snapWindow(to: position)
     }
 
+    @objc private func showPalette() {
+        windowManager?.showSnapPalette()
+    }
+
+    @objc private func tileAll() {
+        windowManager?.tileAllWindows()
+    }
+
+    @objc private func undoSnap() {
+        windowManager?.undoLastSnap()
+    }
+
     @objc private func moveToNextDisplay() {
         windowManager?.moveWindowToNextDisplay()
+    }
+
+    @objc private func checkUpdates() {
+        UpdateChecker.shared.checkForUpdates(openIfAvailable: true)
     }
 
     @objc private func openMainWindow() {

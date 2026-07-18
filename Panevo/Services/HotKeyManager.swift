@@ -166,25 +166,19 @@ class HotKeyManager: ObservableObject {
     }
 
     private func perform(_ action: SnapAction) {
+        if let position = action.getWindowPosition() {
+            windowManager.snapWindow(to: position)
+            return
+        }
+
         switch action {
-        case .leftHalf: windowManager.snapWindow(to: .leftHalf)
-        case .rightHalf: windowManager.snapWindow(to: .rightHalf)
-        case .topHalf: windowManager.snapWindow(to: .topHalf)
-        case .bottomHalf: windowManager.snapWindow(to: .bottomHalf)
-        case .fullScreen: windowManager.snapWindow(to: .fullScreen)
-        case .center: windowManager.snapWindow(to: .center)
-        case .topLeft: windowManager.snapWindow(to: .topLeft)
-        case .topRight: windowManager.snapWindow(to: .topRight)
-        case .bottomLeft: windowManager.snapWindow(to: .bottomLeft)
-        case .bottomRight: windowManager.snapWindow(to: .bottomRight)
-        case .thirdLeft: windowManager.snapWindow(to: .thirdLeft)
-        case .thirdCenter: windowManager.snapWindow(to: .thirdCenter)
-        case .thirdRight: windowManager.snapWindow(to: .thirdRight)
-        case .twoThirdsLeft: windowManager.snapWindow(to: .twoThirdsLeft)
-        case .twoThirdsRight: windowManager.snapWindow(to: .twoThirdsRight)
         case .moveToNextDisplay: windowManager.moveWindowToNextDisplay()
         case .moveToPreviousDisplay: windowManager.moveWindowToPreviousDisplay()
         case .restore: windowManager.restoreWindow()
+        case .undo: windowManager.undoLastSnap()
+        case .tileAll: windowManager.tileAllWindows()
+        case .showPalette: windowManager.showSnapPalette()
+        default: break
         }
     }
 }
