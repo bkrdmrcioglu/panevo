@@ -56,7 +56,7 @@ class WindowManager {
 
     func snapWindow(to position: WindowPosition) {
         guard let frontmostWindow = getFrontmostWindow() else { return }
-        guard let screen = NSScreen.main else { return }
+        guard let screen = screen(for: frontmostWindow) else { return }
         guard !isFrontmostIgnored() else { return }
 
         let resolved = cycledPosition(for: position, window: frontmostWindow, screen: screen)
@@ -153,7 +153,7 @@ class WindowManager {
     // MARK: - Tile All
 
     func tileAllWindows() {
-        guard let screen = NSScreen.main else { return }
+        guard let screen = getFrontmostWindow().flatMap(screen(for:)) ?? screenUnderMouse(NSEvent.mouseLocation) else { return }
         let ownPid = ProcessInfo.processInfo.processIdentifier
         var windows: [AXUIElement] = []
 
@@ -200,7 +200,7 @@ class WindowManager {
     // MARK: - Snap Palette
 
     func showSnapPalette() {
-        guard let screen = NSScreen.main else { return }
+        guard let screen = screenUnderMouse(NSEvent.mouseLocation) else { return }
         paletteManager.show(on: screen)
     }
 
@@ -320,6 +320,13 @@ class WindowManager {
         return displayManager.getDisplayContainingFrame(frame)
     }
 
+    private func screen(for window: AXUIElement) -> NSScreen? {
+        if let display = getDisplayForWindow(window), let screen = NSScreen.screen(for: display.id) {
+            return screen
+        }
+        return NSScreen.main
+    }
+
     // MARK: - App Rules
 
     private func setupAppRuleObserver() {
@@ -404,23 +411,31 @@ class WindowManager {
             return
         }
 
-        let targetScreen = NSScreen.screen(for: displayID)
-        guard let targetScreen = targetScreen else { return }
+        guard let targetScreen = NSScreen.screen(for: displayID) else { return }
+
+        // Work entirely in AX coordinates (top-left origin), like the window position.
+        let sourceBounds = CGDisplayBounds(currentDisplay.id)
+        let target = axFrame(from: targetScreen.visibleFrame)
 
         var newFrame = CGRect(origin: position, size: size)
+        newFrame.size.width = min(size.width, target.width)
+        newFrame.size.height = min(size.height, target.height)
 
         if preserveRelativePosition {
-            let relativeX = (position.x - currentDisplay.frame.minX) / currentDisplay.frame.width
-            let relativeY = (position.y - currentDisplay.frame.minY) / currentDisplay.frame.height
+            let relativeX = (position.x - sourceBounds.minX) / sourceBounds.width
+            let relativeY = (position.y - sourceBounds.minY) / sourceBounds.height
 
-            newFrame.origin.x = targetScreen.frame.minX + (relativeX * targetScreen.frame.width)
-            newFrame.origin.y = targetScreen.frame.minY + (relativeY * targetScreen.frame.height)
+            newFrame.origin.x = target.minX + relativeX * target.width
+            newFrame.origin.y = target.minY + relativeY * target.height
         } else {
-            newFrame.origin.x = targetScreen.frame.minX + (targetScreen.frame.width - size.width) / 2
-            newFrame.origin.y = targetScreen.frame.minY + (targetScreen.frame.height - size.height) / 2
+            newFrame.origin.x = target.minX + (target.width - newFrame.width) / 2
+            newFrame.origin.y = target.minY + (target.height - newFrame.height) / 2
         }
 
-        moveWindow(window, to: newFrame, animated: true)
+        newFrame.origin.x = min(max(newFrame.origin.x, target.minX), target.maxX - newFrame.width)
+        newFrame.origin.y = min(max(newFrame.origin.y, target.minY), target.maxY - newFrame.height)
+
+        moveWindow(window, to: newFrame, animated: shouldAnimate)
     }
 
     private func animateWindow(_ window: AXUIElement, to targetFrame: CGRect) {

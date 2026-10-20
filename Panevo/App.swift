@@ -12,6 +12,36 @@ struct PanevoApp: App {
     }
 }
 
+// Single owner of the managers: each WindowManager/HotKeyManager installs global
+// event monitors and Carbon hotkeys, so a second instance causes double snaps
+// and silently failing shortcuts.
+final class AppServices {
+    static let shared = AppServices()
+
+    let displayManager: DisplayManager
+    let windowManager: WindowManager
+    let hotKeyManager: HotKeyManager
+    let layoutProfileManager: LayoutProfileManager
+
+    private init() {
+        displayManager = DisplayManager()
+        windowManager = WindowManager(displayManager: displayManager, accessibilityManager: AccessibilityManager.shared)
+        hotKeyManager = HotKeyManager(windowManager: windowManager)
+        layoutProfileManager = LayoutProfileManager(accessibilityManager: AccessibilityManager.shared, displayManager: displayManager)
+    }
+
+    func makeViewModel() -> PanevoViewModel {
+        PanevoViewModel(
+            windowManager: windowManager,
+            hotKeyManager: hotKeyManager,
+            displayManager: displayManager,
+            accessibilityManager: AccessibilityManager.shared,
+            settingsManager: SettingsManager.shared,
+            layoutProfileManager: layoutProfileManager
+        )
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarManager: StatusBarManager?
     private var windowManager: WindowManager?
@@ -52,20 +82,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupManagers() {
+        let services = AppServices.shared
         settingsManager = SettingsManager.shared
-        displayManager = DisplayManager()
+        displayManager = services.displayManager
         accessibilityManager = AccessibilityManager.shared
-        windowManager = WindowManager(displayManager: displayManager!, accessibilityManager: accessibilityManager!)
-        hotKeyManager = HotKeyManager(windowManager: windowManager!)
-        statusBarManager = StatusBarManager(hotKeyManager: hotKeyManager!, settingsManager: settingsManager!, windowManager: windowManager)
-
-        let layoutManager = LayoutProfileManager(
-            accessibilityManager: accessibilityManager!,
-            displayManager: displayManager!
-        )
+        windowManager = services.windowManager
+        hotKeyManager = services.hotKeyManager
+        statusBarManager = StatusBarManager(hotKeyManager: services.hotKeyManager, settingsManager: SettingsManager.shared, windowManager: services.windowManager)
         displayProfileService = DisplayProfileService(
-            displayManager: displayManager!,
-            layoutProfileManager: layoutManager
+            displayManager: services.displayManager,
+            layoutProfileManager: services.layoutProfileManager
         )
     }
 

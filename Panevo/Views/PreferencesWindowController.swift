@@ -25,19 +25,7 @@ class PreferencesWindowController: NSWindowController {
     }
 
     override init(window: NSWindow?) {
-        let displayManager = DisplayManager()
-        let accessibilityManager = AccessibilityManager.shared
-        let windowManager = WindowManager(displayManager: displayManager, accessibilityManager: accessibilityManager)
-        let hotKeyManager = HotKeyManager(windowManager: windowManager)
-
-        self.viewModel = PanevoViewModel(
-            windowManager: windowManager,
-            hotKeyManager: hotKeyManager,
-            displayManager: displayManager,
-            accessibilityManager: accessibilityManager,
-            settingsManager: SettingsManager.shared
-        )
-
+        self.viewModel = AppServices.shared.makeViewModel()
         super.init(window: window)
     }
 
@@ -71,16 +59,5 @@ struct PreferencesView: View {
 }
 
 #Preview {
-    let displayManager = DisplayManager()
-    let accessibilityManager = AccessibilityManager.shared
-    let windowManager = WindowManager(displayManager: displayManager, accessibilityManager: accessibilityManager)
-    let hotKeyManager = HotKeyManager(windowManager: windowManager)
-
-    return PreferencesView(viewModel: PanevoViewModel(
-        windowManager: windowManager,
-        hotKeyManager: hotKeyManager,
-        displayManager: displayManager,
-        accessibilityManager: accessibilityManager,
-        settingsManager: SettingsManager.shared
-    ))
+    PreferencesView(viewModel: AppServices.shared.makeViewModel())
 }

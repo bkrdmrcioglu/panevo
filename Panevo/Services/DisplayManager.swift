@@ -47,13 +47,24 @@ class DisplayManager: ObservableObject {
         }
     }
 
+    // Points and frames here are in global display (Accessibility) coordinates:
+    // origin at the top-left of the primary display, y growing downward.
     func getDisplayContainingPoint(_ point: CGPoint) -> DisplayInfo? {
-        return displays.first { NSScreen.screen(for: $0.id)?.frame.contains(point) ?? false }
+        return displays.first { CGDisplayBounds($0.id).contains(point) }
     }
 
     func getDisplayContainingFrame(_ frame: CGRect) -> DisplayInfo? {
         let center = CGPoint(x: frame.midX, y: frame.midY)
-        return getDisplayContainingPoint(center)
+        if let display = getDisplayContainingPoint(center) {
+            return display
+        }
+        return displays.max { a, b in
+            area(CGDisplayBounds(a.id).intersection(frame)) < area(CGDisplayBounds(b.id).intersection(frame))
+        }
+    }
+
+    private func area(_ rect: CGRect) -> CGFloat {
+        rect.isNull ? 0 : rect.width * rect.height
     }
 
     func getNextDisplay(from current: DisplayInfo) -> DisplayInfo? {

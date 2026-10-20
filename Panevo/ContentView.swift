@@ -29,19 +29,7 @@ struct ContentView: View {
     }
 
     init() {
-        let displayManager = DisplayManager()
-        let accessibilityManager = AccessibilityManager.shared
-        let windowManager = WindowManager(displayManager: displayManager, accessibilityManager: accessibilityManager)
-        let hotKeyManager = HotKeyManager(windowManager: windowManager)
-        let settingsManager = SettingsManager.shared
-
-        _viewModel = StateObject(wrappedValue: PanevoViewModel(
-            windowManager: windowManager,
-            hotKeyManager: hotKeyManager,
-            displayManager: displayManager,
-            accessibilityManager: accessibilityManager,
-            settingsManager: settingsManager
-        ))
+        _viewModel = StateObject(wrappedValue: AppServices.shared.makeViewModel())
     }
 
     var body: some View {

@@ -21,16 +21,14 @@ class PanevoViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init(windowManager: WindowManager, hotKeyManager: HotKeyManager, displayManager: DisplayManager,
-         accessibilityManager: AccessibilityManager, settingsManager: SettingsManager) {
+         accessibilityManager: AccessibilityManager, settingsManager: SettingsManager,
+         layoutProfileManager: LayoutProfileManager) {
         self.windowManager = windowManager
         self.hotKeyManager = hotKeyManager
         self.displayManager = displayManager
         self.accessibilityManager = accessibilityManager
         self.settingsManager = settingsManager
-        self.layoutProfileManager = LayoutProfileManager(
-            accessibilityManager: accessibilityManager,
-            displayManager: displayManager
-        )
+        self.layoutProfileManager = layoutProfileManager
 
         setupBindings()
         checkAccessibility()
@@ -58,9 +56,11 @@ class PanevoViewModel: ObservableObject {
     private func loadData() {
         isLoading = true
         DispatchQueue.global().async { [weak self] in
-            self?.allWindows = self?.windowManager.getAllWindows() ?? []
-            self?.layoutProfiles = self?.settingsManager.getLayoutProfiles() ?? []
+            let windows = self?.windowManager.getAllWindows() ?? []
+            let profiles = self?.settingsManager.getLayoutProfiles() ?? []
             DispatchQueue.main.async {
+                self?.allWindows = windows
+                self?.layoutProfiles = profiles
                 self?.isLoading = false
             }
         }
